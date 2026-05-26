@@ -24,7 +24,7 @@ First public release candidate. The native app builds, the service tests pass on
 | Optional OpenAI-compatible AI providers | works and verified | native build + DeepSeek live check | `docs/how-to/common-tasks.md` |
 | Import UI for arbitrary roots | partial | service method exists, UI is not public-ready | limitation |
 | Portable Windows x64 ZIP | works and verified | `dotnet publish` + ZIP artifact | release notes |
-| Signed installer/MSIX release | not implemented | release checklist | `PUBLIC_RELEASE_CHECKLIST.md` |
+| Signing guidance | documented | signing guide | `docs/how-to/signing.md` |
 
 ## Download
 
@@ -93,8 +93,6 @@ No environment variables are required for normal use. Optional AI provider keys 
 - Signing: `docs/how-to/signing.md`
 - Reference: `docs/reference/project-reference.md`
 - Explanation: `docs/explanation/project-overview.md`
-- Demo plan: `docs/demo/demo-script.md`
-- Media manifest: `docs/assets/media-manifest.md`
 
 ## Limitations
 

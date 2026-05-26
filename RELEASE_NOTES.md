@@ -28,4 +28,4 @@ First public release of Codex Local Retrieval.
 
 - MSIX packaging and code signing are not implemented.
 - Import UI is not public-ready, although the core service can parse JSONL roots.
-- Public screenshots are planned but not included in this release.
+- A sanitized README screenshot is included. Additional workflow video capture is not included.

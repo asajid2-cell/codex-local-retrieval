@@ -23,4 +23,4 @@ dotnet test .\native\CodexLocalRetrieval.Native.Tests\CodexLocalRetrieval.Native
 
 ## Release Work
 
-Packaging, signing, and screenshot capture should follow `PUBLIC_RELEASE_CHECKLIST.md`.
+Packaging and signing should follow `docs/how-to/signing.md`.
