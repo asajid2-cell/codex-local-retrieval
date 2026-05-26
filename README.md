@@ -8,12 +8,14 @@ This project is not affiliated with OpenAI. It is intended for developers who ke
 
 First public release candidate. The native app builds, the service tests pass on Windows with the .NET 8 SDK, and the release ships as a portable Windows x64 ZIP. The app is local-first and read-only toward source session files. MSIX signing and fresh public screenshots are still future release work.
 
+![Codex Local Retrieval archive reader](docs/assets/hero-screenshot.png)
+
 ## Features
 
 | feature | status | proof | demo/docs |
 |---|---|---|---|
 | Read local archive index | works and verified | `dotnet test` | `docs/tutorials/getting-started.md` |
-| Browse chat transcripts | works and verified | WinUI build + sample store | planned `docs/assets/hero-screenshot.png` |
+| Browse chat transcripts | works and verified | WinUI build + sample screenshot | `docs/assets/hero-screenshot.png` |
 | Filter sidebar chats | works and verified | native app manual check | README quickstart |
 | Deep fuzzy/content search | works and verified | `DeepSearch_ReturnsContentSnippetsAndPathPayload` | `docs/how-to/common-tasks.md` |
 | Workspace and collection groups | works and verified | native build | `docs/reference/project-reference.md` |
@@ -39,6 +41,10 @@ CodexLocalRetrieval.Native.exe
 ```
 
 The ZIP is self-contained for Windows x64. It is not code signed, so Windows may show a SmartScreen warning.
+
+## Signing
+
+The current ZIP is unsigned. A warning-free Windows release needs a trusted code-signing certificate or Microsoft Trusted Signing. A self-signed development certificate can be used for local testing, but it will not remove SmartScreen warnings for public users.
 
 ## Quickstart
 
@@ -84,6 +90,7 @@ No environment variables are required for normal use. Optional AI provider keys 
 
 - Tutorial: `docs/tutorials/getting-started.md`
 - How-to: `docs/how-to/common-tasks.md`
+- Signing: `docs/how-to/signing.md`
 - Reference: `docs/reference/project-reference.md`
 - Explanation: `docs/explanation/project-overview.md`
 - Demo plan: `docs/demo/demo-script.md`

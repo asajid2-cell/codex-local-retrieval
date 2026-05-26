@@ -7,14 +7,14 @@
 - [x] User metadata moved to `%LocalAppData%\CodexLocalRetrieval`.
 - [x] Build output and dependency caches excluded by `.gitignore`.
 - [x] Dedicated secret scanners checked; `gitleaks` and `trufflehog` were unavailable in this environment.
-- [x] No public screenshots are currently included.
+- [x] Public hero screenshot captured from sanitized sample data.
 
 ## Validation
 
 - [x] `dotnet test .\native\CodexLocalRetrieval.Native.Tests\CodexLocalRetrieval.Native.Tests.csproj -p:Platform=x64`
 - [x] `dotnet build .\native\CodexLocalRetrieval.Native\CodexLocalRetrieval.Native.csproj -p:Platform=x64`
 - [x] `dotnet publish .\native\CodexLocalRetrieval.Native\CodexLocalRetrieval.Native.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64`
-- [ ] Capture a sanitized hero screenshot from the sample data.
+- [x] Capture a sanitized hero screenshot from the sample data.
 
 ## Release
 
