@@ -1,0 +1,47 @@
+# Build output
+bin/
+obj/
+dist/
+publish/
+artifacts/
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+*.zip
+
+# .NET
+TestResults/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node/prototype leftovers
+node_modules/
+coverage/
+playwright-report/
+test-results/
+
+# Local app data and private imports
+PUBLIC_REPO_AUDIT.md
+.env
+.env.*
+!.env.example
+data/app-store.private.json
+data/imports/
+data/local/
+*.sqlite
+*.db
+*.log
+*.pfx
+*.pem
+*.key
+
+# OS/editor
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
