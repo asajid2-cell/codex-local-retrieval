@@ -16,13 +16,15 @@ First public release of Codex Local Retrieval.
 
 - `codex-local-retrieval-win-x64.zip`
 - Portable Windows x64 build.
+- Contains a top-level `Codex Local Retrieval.exe` launcher and an `app` folder for runtime files.
 - Unsigned; Windows SmartScreen may warn on first launch.
 
 ## Validation
 
 - `dotnet build .\native\CodexLocalRetrieval.Native\CodexLocalRetrieval.Native.csproj -p:Platform=x64`
 - `dotnet test .\native\CodexLocalRetrieval.Native.Tests\CodexLocalRetrieval.Native.Tests.csproj -p:Platform=x64`
-- `dotnet publish .\native\CodexLocalRetrieval.Native\CodexLocalRetrieval.Native.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64`
+- `.\tools\release\package-win-x64.ps1`
+- Extracted ZIP launcher smoke test.
 
 ## Known Issues
 

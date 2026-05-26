@@ -34,8 +34,7 @@ Expected result: all service tests pass.
 ## Package
 
 ```powershell
-dotnet publish .\native\CodexLocalRetrieval.Native\CodexLocalRetrieval.Native.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -o .\artifacts\codex-local-retrieval-win-x64
-Compress-Archive -Path .\artifacts\codex-local-retrieval-win-x64\* -DestinationPath .\artifacts\codex-local-retrieval-win-x64.zip -Force
+.\tools\release\package-win-x64.ps1
 ```
 
-Expected result: `artifacts/codex-local-retrieval-win-x64.zip` is created. The first release ZIP is unsigned.
+Expected result: `artifacts/codex-local-retrieval-win-x64.zip` is created. The release ZIP should contain a top-level `Codex Local Retrieval.exe` launcher and an `app` folder. The first release ZIP is unsigned.

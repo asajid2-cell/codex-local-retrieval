@@ -47,11 +47,10 @@ Verification: the status line reports how many local excerpts were used. The app
 
 ## How to Package a ZIP Release
 
-1. Run the Release publish command from the repository root.
-2. Compress the publish output into `artifacts/codex-local-retrieval-win-x64.zip`.
-3. Upload the ZIP as the GitHub release asset.
+1. Run `.\tools\release\package-win-x64.ps1` from the repository root.
+2. Upload `artifacts/codex-local-retrieval-win-x64.zip` as the GitHub release asset.
 
-Verification: the ZIP contains `CodexLocalRetrieval.Native.exe` and the publish command completes without warnings or errors.
+Verification: the ZIP contains top-level `Codex Local Retrieval.exe`, an `app` folder, and `app/CodexLocalRetrieval.Native.exe`.
 
 ## How to Keep Public Data Safe
 

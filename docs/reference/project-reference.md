@@ -29,7 +29,7 @@ Runtime metadata:
 ```powershell
 dotnet build .\CodexLocalRetrieval.sln -p:Platform=x64
 dotnet test .\native\CodexLocalRetrieval.Native.Tests\CodexLocalRetrieval.Native.Tests.csproj -p:Platform=x64
-dotnet publish .\native\CodexLocalRetrieval.Native\CodexLocalRetrieval.Native.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -o .\artifacts\codex-local-retrieval-win-x64
+.\tools\release\package-win-x64.ps1
 ```
 
 ## Defaults
@@ -47,7 +47,7 @@ dotnet publish .\native\CodexLocalRetrieval.Native\CodexLocalRetrieval.Native.cs
 
 | artifact | status |
 |---|---|
-| `codex-local-retrieval-win-x64.zip` | portable Windows x64 release |
+| `codex-local-retrieval-win-x64.zip` | portable Windows x64 release with top-level launcher and runtime files under `app/` |
 | MSIX | not shipped in the first release |
 | signing | not implemented |
 

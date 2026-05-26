@@ -37,10 +37,10 @@ codex-local-retrieval-win-x64.zip
 Extract the ZIP and run:
 
 ```text
-CodexLocalRetrieval.Native.exe
+Codex Local Retrieval.exe
 ```
 
-The ZIP is self-contained for Windows x64. It is not code signed, so Windows may show a SmartScreen warning.
+The ZIP opens to a top-level launcher and an `app` folder. Keep the `app` folder next to `Codex Local Retrieval.exe`. The ZIP is self-contained for Windows x64. It is not code signed, so Windows may show a SmartScreen warning.
 
 ## Signing
 
@@ -80,9 +80,10 @@ The checked-in `data/app-store.json` is sanitized sample data. User metadata is 
 Package a portable Windows x64 ZIP:
 
 ```powershell
-dotnet publish .\native\CodexLocalRetrieval.Native\CodexLocalRetrieval.Native.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -o .\artifacts\codex-local-retrieval-win-x64
-Compress-Archive -Path .\artifacts\codex-local-retrieval-win-x64\* -DestinationPath .\artifacts\codex-local-retrieval-win-x64.zip -Force
+.\tools\release\package-win-x64.ps1
 ```
+
+The package script builds the app into `artifacts/codex-local-retrieval-package/app`, builds the top-level `Codex Local Retrieval.exe` launcher, and creates `artifacts/codex-local-retrieval-win-x64.zip`.
 
 No environment variables are required for normal use. Optional AI provider keys are entered in the app under Settings and stored through Windows credentials, not in `data/app-store.json`.
 

@@ -9,7 +9,7 @@ Use a trusted Authenticode certificate or Microsoft Trusted Signing. This is the
 Expected flow:
 
 1. Publish the Windows x64 build.
-2. Sign `CodexLocalRetrieval.Native.exe` and any required binaries with the trusted certificate.
+2. Sign the top-level `Codex Local Retrieval.exe`, `app/CodexLocalRetrieval.Native.exe`, and any required binaries with the trusted certificate.
 3. Verify the signature with `Get-AuthenticodeSignature`.
 4. Compress the signed publish directory.
 5. Upload the signed ZIP as a release asset.
@@ -17,7 +17,8 @@ Expected flow:
 Verification:
 
 ```powershell
-Get-AuthenticodeSignature .\CodexLocalRetrieval.Native.exe
+Get-AuthenticodeSignature ".\Codex Local Retrieval.exe"
+Get-AuthenticodeSignature .\app\CodexLocalRetrieval.Native.exe
 ```
 
 Expected result: `Status` is `Valid` on a machine that trusts the certificate chain.
@@ -33,7 +34,7 @@ $cert = New-SelfSignedCertificate `
   -CertStoreLocation Cert:\CurrentUser\My
 
 Set-AuthenticodeSignature `
-  -FilePath .\CodexLocalRetrieval.Native.exe `
+  -FilePath ".\Codex Local Retrieval.exe" `
   -Certificate $cert
 ```
 
