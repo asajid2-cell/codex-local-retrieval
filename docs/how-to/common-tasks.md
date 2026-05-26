@@ -9,6 +9,15 @@
 
 Verification: the result list should show a matched snippet and an `Open chat` action.
 
+## How to Index Local Chats
+
+1. Open the app.
+2. Wait for startup auto-detection, or open `Settings`.
+3. In `Chat source`, enter the folder that contains Codex JSONL chat files, usually `%USERPROFILE%\.codex\sessions`.
+4. Choose `Index folder`.
+
+Verification: the sidebar shows your local chats, and `Settings` reports how many chats were indexed. The source folder is not modified.
+
 ## How to Copy a Restore Packet
 
 1. Select a chat.

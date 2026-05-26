@@ -40,6 +40,66 @@ public sealed class ArchiveService
         RefreshSessions(OrderedVisibleSessions(Store.Sessions.Values));
     }
 
+    public string ResolveDefaultChatRoot()
+    {
+        if (!string.IsNullOrWhiteSpace(Store.Settings.ChatRootPath) && Directory.Exists(Store.Settings.ChatRootPath))
+        {
+            return Store.Settings.ChatRootPath;
+        }
+
+        return CandidateChatRoots().FirstOrDefault(root => Directory.Exists(root) && ContainsSessionJsonl(root)) ?? "";
+    }
+
+    public IReadOnlyList<string> CandidateChatRoots()
+    {
+        var roots = new List<string>();
+        var codexHome = Environment.GetEnvironmentVariable("CODEX_HOME");
+        if (!string.IsNullOrWhiteSpace(codexHome))
+        {
+            AddIfUnique(roots, Path.Combine(codexHome, "sessions"));
+            AddIfUnique(roots, Path.Combine(codexHome, "archived_sessions"));
+            AddIfUnique(roots, codexHome);
+        }
+
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var userCodex = Path.Combine(home, ".codex");
+        AddIfUnique(roots, Path.Combine(userCodex, "sessions"));
+        AddIfUnique(roots, Path.Combine(userCodex, "archived_sessions"));
+        AddIfUnique(roots, Path.Combine(userCodex, "repair-backups"));
+        AddIfUnique(roots, userCodex);
+        return roots;
+    }
+
+    public async Task<int> AutoIndexAsync(IProgress<string>? progress = null)
+    {
+        if (!Store.Settings.AutoIndexOnStartup)
+        {
+            progress?.Report("Auto-index is off.");
+            return 0;
+        }
+
+        var root = ResolveDefaultChatRoot();
+        if (string.IsNullOrWhiteSpace(root))
+        {
+            Store.Settings.LastIndexStatus = "No local Codex sessions were found. Set a chat folder in Settings.";
+            progress?.Report(Store.Settings.LastIndexStatus);
+            await SaveAsync();
+            return 0;
+        }
+
+        if (!HasOnlyDemoSessions()
+            && !string.IsNullOrWhiteSpace(Store.Settings.LastIndexedAt)
+            && string.Equals(Store.Settings.ChatRootPath, root, StringComparison.OrdinalIgnoreCase))
+        {
+            Store.Settings.LastIndexStatus = $"Using existing index from {Store.Settings.ChatRootPath}. Use Index folder to refresh.";
+            progress?.Report(Store.Settings.LastIndexStatus);
+            return 0;
+        }
+
+        progress?.Report($"Indexing {root}");
+        return await IndexRootAsync(root, progress);
+    }
+
     public async Task<bool> EnrichTitlesFromLocalStateAsync()
     {
         var changed = await Task.Run(EnrichTitlesFromLocalState);
@@ -210,19 +270,30 @@ public sealed class ArchiveService
 
     public async Task<int> IndexRootAsync(string rootPath, IProgress<string>? progress = null)
     {
+        rootPath = Environment.ExpandEnvironmentVariables(rootPath.Trim());
         if (!Directory.Exists(rootPath))
         {
             progress?.Report("Root does not exist.");
             return 0;
         }
 
-        var files = Directory.EnumerateFiles(rootPath, "*.jsonl", SearchOption.AllDirectories).Take(1000).ToList();
+        Store.Settings.ChatRootPath = rootPath;
+        var files = EnumerateSessionFiles(rootPath).Take(5000).ToList();
         var indexed = 0;
+        if (files.Count > 0 && HasOnlyDemoSessions())
+        {
+            RemoveDemoSessions();
+        }
+
         foreach (var file in files)
         {
             try
             {
                 var session = await ParseJsonlAsync(file);
+                if (session.Messages.Count == 0)
+                {
+                    continue;
+                }
                 Store.Sessions[session.Id] = session;
                 indexed++;
                 if (indexed % 25 == 0) progress?.Report($"Indexed {indexed}/{files.Count}");
@@ -233,9 +304,13 @@ public sealed class ArchiveService
             }
         }
 
+        Store.Settings.LastIndexedAt = DateTime.UtcNow.ToString("O");
+        Store.Settings.LastIndexStatus = indexed == 0
+            ? $"No chat sessions found under {rootPath}."
+            : $"Indexed {indexed} chats from {rootPath}.";
         await SaveAsync();
         RefreshSessions(Store.Sessions.Values.OrderByDescending(s => s.UpdatedAt));
-        progress?.Report($"Done: {indexed} indexed.");
+        progress?.Report(Store.Settings.LastIndexStatus);
         return indexed;
     }
 
@@ -355,6 +430,67 @@ public sealed class ArchiveService
     private static string SearchText(ArchiveSession session)
     {
         return $"{session.Id}\n{session.DisplayTitle}\n{session.Title}\n{session.Text}\n{session.SourcePath}\n{session.Workspace}\n{string.Join(' ', session.Tags)}";
+    }
+
+    private static IEnumerable<string> EnumerateSessionFiles(string rootPath)
+    {
+        try
+        {
+            return Directory.EnumerateFiles(rootPath, "*.jsonl", SearchOption.AllDirectories)
+                .Where(file => !IsKnownNonSessionJsonl(file))
+                .OrderByDescending(file => File.GetLastWriteTimeUtc(file))
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static bool ContainsSessionJsonl(string rootPath)
+    {
+        return EnumerateSessionFiles(rootPath).Take(25).Any();
+    }
+
+    private static bool IsKnownNonSessionJsonl(string filePath)
+    {
+        var name = Path.GetFileName(filePath);
+        return name.Equals("session_index.jsonl", StringComparison.OrdinalIgnoreCase)
+               || name.Equals("history.jsonl", StringComparison.OrdinalIgnoreCase)
+               || name.Equals("responses.jsonl", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AddIfUnique(List<string> roots, string path)
+    {
+        if (!roots.Any(existing => string.Equals(existing, path, StringComparison.OrdinalIgnoreCase)))
+        {
+            roots.Add(path);
+        }
+    }
+
+    private bool HasOnlyDemoSessions()
+    {
+        return Store.Sessions.Count > 0 && Store.Sessions.Values.All(IsDemoSession);
+    }
+
+    private void RemoveDemoSessions()
+    {
+        foreach (var id in Store.Sessions.Values.Where(IsDemoSession).Select(session => session.Id).ToList())
+        {
+            Store.Sessions.Remove(id);
+        }
+
+        foreach (var collection in Store.Collections.Values)
+        {
+            collection.SessionIds.RemoveAll(id => !Store.Sessions.ContainsKey(id));
+        }
+    }
+
+    private static bool IsDemoSession(ArchiveSession session)
+    {
+        return session.Model == "local-demo"
+               || session.SourcePath.StartsWith("data/fixtures/", StringComparison.OrdinalIgnoreCase)
+               || session.SourcePath.StartsWith("data\\fixtures\\", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IEnumerable<ArchiveSearchHit> DeepHitsForSession(ArchiveSession session, string[] terms)

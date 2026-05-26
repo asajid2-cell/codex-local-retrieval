@@ -35,6 +35,18 @@ public sealed class ArchiveSettings
     [JsonPropertyName("readOnlySourceMode")]
     public bool ReadOnlySourceMode { get; set; } = true;
 
+    [JsonPropertyName("chatRootPath")]
+    public string ChatRootPath { get; set; } = "";
+
+    [JsonPropertyName("autoIndexOnStartup")]
+    public bool AutoIndexOnStartup { get; set; } = true;
+
+    [JsonPropertyName("lastIndexedAt")]
+    public string LastIndexedAt { get; set; } = "";
+
+    [JsonPropertyName("lastIndexStatus")]
+    public string LastIndexStatus { get; set; } = "";
+
     [JsonPropertyName("panelRadius")]
     public int PanelRadius { get; set; } = 12;
 

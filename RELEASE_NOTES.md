@@ -11,6 +11,7 @@ First public release of Codex Local Retrieval.
 - Right-click chat actions for pin, rename, archive, copy path, and collections.
 - Theme, accent, shape, and density settings.
 - Optional OpenAI-compatible AI provider support with model detection and Windows credential storage for API keys.
+- Startup auto-detection for local Codex sessions, plus a Settings chat source path for manual indexing.
 
 ## Release Artifact
 
@@ -29,5 +30,5 @@ First public release of Codex Local Retrieval.
 ## Known Issues
 
 - MSIX packaging and code signing are not implemented.
-- Import UI is not public-ready, although the core service can parse JSONL roots.
+- Auto-detection targets standard Codex folders. Users with custom archive locations should set the chat source path in Settings.
 - A sanitized README screenshot is included. Additional workflow video capture is not included.

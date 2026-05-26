@@ -40,6 +40,7 @@ dotnet test .\native\CodexLocalRetrieval.Native.Tests\CodexLocalRetrieval.Native
 | accent | Rose |
 | shape | Compact |
 | source mode | read-only |
+| chat source | auto-detected from `%USERPROFILE%\.codex\sessions` when available |
 | AI provider | DeepSeek preset |
 | AI key storage | Windows credentials |
 

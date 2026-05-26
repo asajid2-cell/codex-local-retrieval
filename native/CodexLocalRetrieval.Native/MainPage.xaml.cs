@@ -27,6 +27,7 @@ public sealed partial class MainPage : Page
     private string _askQuestion = "";
     private string _askAnswer = "";
     private string _askStatus = "Configure a provider in Settings, then ask a question about your archive.";
+    private string _indexStatus = "";
 
     public MainPage()
     {
@@ -42,7 +43,29 @@ public sealed partial class MainPage : Page
         SessionList.ItemsSource = _archive.Sessions;
         SelectFirstSession();
         RenderCurrent();
+        _ = AutoIndexAfterFirstPaint();
         _ = RefreshTitlesAfterFirstPaint();
+    }
+
+    private async Task AutoIndexAfterFirstPaint()
+    {
+        await Task.Delay(250);
+        var progress = new Progress<string>(message =>
+        {
+            _indexStatus = message;
+            if (_screen == "Settings")
+            {
+                RenderSettings();
+            }
+        });
+
+        var indexed = await _archive.AutoIndexAsync(progress);
+        if (indexed > 0)
+        {
+            SelectFirstSession();
+            RenderCurrent();
+            _ = RefreshTitlesAfterFirstPaint();
+        }
     }
 
     private async Task RefreshTitlesAfterFirstPaint()
@@ -242,6 +265,7 @@ public sealed partial class MainPage : Page
         ScreenLabel.Text = "Preferences and safety";
         TitleText.Text = "Settings";
         MainContent.Children.Clear();
+        MainContent.Children.Add(ChatSourcePanel());
         MainContent.Children.Add(SettingsPanel(
             "Theme picker",
             "Choose the palette, accent, shape, and density used by the app.",
@@ -868,6 +892,112 @@ public sealed partial class MainPage : Page
             RenderCurrent();
         };
         return combo;
+    }
+
+    private Border ChatSourcePanel()
+    {
+        var pathBox = new TextBox
+        {
+            Text = _archive.Store.Settings.ChatRootPath,
+            PlaceholderText = @"%USERPROFILE%\.codex\sessions",
+            MinWidth = 520,
+            CornerRadius = ControlCornerRadius()
+        };
+
+        var autoCheck = new CheckBox
+        {
+            Content = "Auto-index on startup",
+            IsChecked = _archive.Store.Settings.AutoIndexOnStartup,
+            Foreground = StrongBrush()
+        };
+        autoCheck.Checked += async (_, _) =>
+        {
+            if (!_storeLoaded) return;
+            _archive.Store.Settings.AutoIndexOnStartup = true;
+            await _archive.SaveAsync();
+        };
+        autoCheck.Unchecked += async (_, _) =>
+        {
+            if (!_storeLoaded) return;
+            _archive.Store.Settings.AutoIndexOnStartup = false;
+            await _archive.SaveAsync();
+        };
+
+        var detectButton = new Button { Style = (Style)Resources["PillButtonStyle"], Content = "Auto-detect" };
+        detectButton.Click += async (_, _) =>
+        {
+            var detected = _archive.ResolveDefaultChatRoot();
+            if (string.IsNullOrWhiteSpace(detected))
+            {
+                await ShowInfoAsync("No local sessions found", "Set the folder that contains your Codex JSONL chat files, usually .codex\\sessions.");
+                return;
+            }
+
+            pathBox.Text = detected;
+            await IndexChatRootAsync(detected);
+        };
+
+        var indexButton = new Button { Style = (Style)Resources["PrimaryPillButtonStyle"], Content = "Index folder" };
+        indexButton.Click += async (_, _) => await IndexChatRootAsync(pathBox.Text);
+
+        var candidates = _archive.CandidateChatRoots()
+            .Where(Directory.Exists)
+            .Take(4)
+            .ToList();
+        var candidatesText = candidates.Count == 0
+            ? "No default Codex folders found yet."
+            : "Detected: " + string.Join(" | ", candidates);
+
+        var statusText = string.IsNullOrWhiteSpace(_indexStatus)
+            ? _archive.Store.Settings.LastIndexStatus
+            : _indexStatus;
+
+        var stack = new StackPanel { Spacing = _archive.Store.Settings.Density == "compact" ? 10 : 14 };
+        stack.Children.Add(new TextBlock { Text = "Chat source", Foreground = StrongBrush(), FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        stack.Children.Add(new TextBlock { Text = "Point the app at your local Codex sessions folder. Source files are read-only; the app stores its own index and metadata separately.", Foreground = MutedBrush(), TextWrapping = TextWrapping.Wrap });
+        stack.Children.Add(pathBox);
+        stack.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Children = { indexButton, detectButton, autoCheck }
+        });
+        stack.Children.Add(new TextBlock { Text = candidatesText, Foreground = MutedBrush(), FontSize = 12, TextWrapping = TextWrapping.Wrap });
+        if (!string.IsNullOrWhiteSpace(statusText))
+        {
+            stack.Children.Add(new TextBlock { Text = statusText, Foreground = MutedBrush(), FontSize = 12, TextWrapping = TextWrapping.Wrap });
+        }
+
+        return Card(stack);
+    }
+
+    private async Task IndexChatRootAsync(string rootPath)
+    {
+        rootPath = Environment.ExpandEnvironmentVariables(rootPath.Trim());
+        if (string.IsNullOrWhiteSpace(rootPath) || !Directory.Exists(rootPath))
+        {
+            await ShowInfoAsync("Folder not found", "Enter an existing folder that contains Codex chat JSONL files.");
+            return;
+        }
+
+        _indexStatus = $"Indexing {rootPath}";
+        RenderSettings();
+        var progress = new Progress<string>(message =>
+        {
+            _indexStatus = message;
+            if (_screen == "Settings")
+            {
+                RenderSettings();
+            }
+        });
+
+        var indexed = await _archive.IndexRootAsync(rootPath, progress);
+        if (indexed > 0)
+        {
+            await _archive.EnrichTitlesFromLocalStateAsync();
+            SelectFirstSession();
+        }
+        RenderCurrent();
     }
 
     private Border AiProviderPanel()

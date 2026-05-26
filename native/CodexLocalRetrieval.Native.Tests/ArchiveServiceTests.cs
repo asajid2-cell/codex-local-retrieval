@@ -60,6 +60,29 @@ public sealed class ArchiveServiceTests
         Assert.AreEqual(fixture.SourcePath, path);
     }
 
+    [TestMethod]
+    public async Task IndexRootAsync_StoresConfiguredChatRootAndSkipsIndexes()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "CodexLocalRetrieval.Tests", Guid.NewGuid().ToString("N"), "sessions");
+        Directory.CreateDirectory(root);
+        await File.WriteAllTextAsync(Path.Combine(root, "session_index.jsonl"), "{\"id\":\"not-a-session\"}");
+        await File.WriteAllTextAsync(Path.Combine(root, "rollout-test.jsonl"), string.Join('\n', new[]
+        {
+            "{\"timestamp\":\"2026-05-25T12:00:00.000Z\",\"payload\":{\"id\":\"real-session\",\"cwd\":\"C:\\\\Projects\\\\demo\"}}",
+            "{\"timestamp\":\"2026-05-25T12:01:00.000Z\",\"payload\":{\"type\":\"message\",\"role\":\"user\",\"content\":[{\"text\":\"Open my real local chats\"}]}}"
+        }));
+
+        var service = CreateService();
+        await service.LoadAsync();
+
+        var indexed = await service.IndexRootAsync(root);
+
+        Assert.AreEqual(1, indexed);
+        Assert.AreEqual(root, service.Store.Settings.ChatRootPath);
+        Assert.AreEqual("real-session", service.Search("real local").Single().Id);
+        Assert.IsFalse(service.Store.Sessions.ContainsKey("fixture-a"));
+    }
+
     private static ArchiveService CreateService()
     {
         var tempStore = Path.Combine(Path.GetTempPath(), "CodexLocalRetrieval.Tests", Guid.NewGuid().ToString("N"), "app-store.json");

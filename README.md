@@ -1,6 +1,6 @@
 # Codex Local Retrieval
 
-Codex Local Retrieval is an unofficial Windows desktop app for browsing local Codex session archives without modifying the source files. It is built with WinUI 3 and keeps user metadata in a separate local app store. The repository currently ships as a native desktop app with sanitized demo data for testing and screenshots.
+Codex Local Retrieval is an unofficial Windows desktop app for browsing local Codex session archives without modifying the source files. It is built with WinUI 3, auto-detects local Codex chat folders, and keeps user metadata in a separate local app store. The repository includes sanitized demo data for tests and screenshots.
 
 This project is not affiliated with OpenAI. It is intended for developers who keep local Codex session files and want a safer way to search, review, copy code, and build restore packets from older conversations.
 
@@ -22,8 +22,8 @@ First public release candidate. The native app builds, the service tests pass on
 | Copy restore packet, code, or chat path | works and verified | `CopyPayload_BuildsRestorePacketAndCodePayload` | `docs/how-to/common-tasks.md` |
 | Theme/accent/shape settings | works and verified | native build | `docs/reference/project-reference.md` |
 | Optional OpenAI-compatible AI providers | works and verified | native build + DeepSeek live check | `docs/how-to/common-tasks.md` |
-| Import UI for arbitrary roots | partial | service method exists, UI is not public-ready | limitation |
-| Portable Windows x64 ZIP | works and verified | `dotnet publish` + ZIP artifact | release notes |
+| Auto-detect or set chat source path | works and verified | `IndexRootAsync_StoresConfiguredChatRootAndSkipsIndexes` | `docs/how-to/common-tasks.md` |
+| Portable Windows x64 ZIP | works and verified | package script + launcher smoke test | release notes |
 | Signing guidance | documented | signing guide | `docs/how-to/signing.md` |
 
 ## Download
@@ -41,6 +41,8 @@ Codex Local Retrieval.exe
 ```
 
 The ZIP opens to a top-level launcher and an `app` folder. Keep the `app` folder next to `Codex Local Retrieval.exe`. The ZIP is self-contained for Windows x64. It is not code signed, so Windows may show a SmartScreen warning.
+
+On startup, the app tries to index local chats from common Codex folders such as `%USERPROFILE%\.codex\sessions`. To set a different folder, open `Settings`, use `Chat source`, and choose `Index folder`.
 
 ## Signing
 
@@ -97,8 +99,8 @@ No environment variables are required for normal use. Optional AI provider keys 
 
 ## Limitations
 
-- The native import/index workflow is not finished as a public UI. The core service can parse JSONL roots, but the app currently starts from the local app store or sanitized seed data.
 - The app is designed for local files and does not sync data across machines.
+- Auto-detection is aimed at standard Codex folders. If your chats live elsewhere, set the folder manually in Settings.
 - AI features are optional and use OpenAI-compatible chat completions. Ask Archive sends only retrieved excerpts by default, not the full archive.
 - Public screenshots must use sanitized demo data. Do not publish screenshots that show private local paths, usernames, session titles, or conversation text.
 - The release ZIP is not signed. MSIX packaging/signing is not complete.
