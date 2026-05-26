@@ -1,3 +1,12 @@
+# v0.1.1
+
+Patch release for local session indexing.
+
+## Fixes
+
+- Local session indexing streams Codex JSONL files, so large or actively written chat logs can load without leaving the app stuck on sample sessions.
+- Real Codex session titles are refreshed after indexing so freshly indexed local chats sort and label correctly.
+
 # v0.1.0
 
 First public release of Codex Local Retrieval.

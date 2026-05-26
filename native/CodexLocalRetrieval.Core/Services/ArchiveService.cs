@@ -9,6 +9,10 @@ namespace CodexLocalRetrieval.Core.Services;
 
 public sealed class ArchiveService
 {
+    private const int MaxMessagesPerSession = 220;
+    private const int MaxLinesPerSession = 18_000;
+    private const int MaxLineChars = 512_000;
+
     private readonly string _contentRootPath;
     private readonly string _seedStorePath;
     private readonly string _storePath;
@@ -308,6 +312,10 @@ public sealed class ArchiveService
         Store.Settings.LastIndexStatus = indexed == 0
             ? $"No chat sessions found under {rootPath}."
             : $"Indexed {indexed} chats from {rootPath}.";
+        if (indexed > 0)
+        {
+            EnrichTitlesFromLocalState();
+        }
         await SaveAsync();
         RefreshSessions(Store.Sessions.Values.OrderByDescending(s => s.UpdatedAt));
         progress?.Report(Store.Settings.LastIndexStatus);
@@ -322,15 +330,25 @@ public sealed class ArchiveService
         var cwd = "";
         var created = "";
         var updated = "";
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var info = new FileInfo(filePath);
+        updated = info.LastWriteTimeUtc.ToString("O");
 
-        foreach (var line in await File.ReadAllLinesAsync(filePath))
+        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        var lineCount = 0;
+        while (await reader.ReadLineAsync() is { } line)
         {
+            lineCount++;
+            if (lineCount > MaxLinesPerSession) break;
+            if (messages.Count >= MaxMessagesPerSession) break;
             if (string.IsNullOrWhiteSpace(line)) continue;
+            if (line.Length > MaxLineChars) continue;
             using var doc = JsonDocument.Parse(line);
             var root = doc.RootElement;
             var timestamp = root.TryGetProperty("timestamp", out var ts) ? ts.GetString() ?? "" : "";
             if (string.IsNullOrWhiteSpace(created)) created = timestamp;
-            updated = timestamp;
+            if (!string.IsNullOrWhiteSpace(timestamp)) updated = timestamp;
 
             if (root.TryGetProperty("payload", out var payload))
             {
@@ -339,11 +357,25 @@ public sealed class ArchiveService
                 if (payload.TryGetProperty("type", out var typeProp) && typeProp.GetString() == "message")
                 {
                     var role = payload.TryGetProperty("role", out var roleProp) ? roleProp.GetString() ?? "message" : "message";
+                    if (!IsIndexedRole(role)) continue;
                     var text = ExtractContent(payload);
-                    AddMessage(messages, codeBlocks, role, text, timestamp);
+                    AddMessage(messages, codeBlocks, role, text, timestamp, seen);
+                }
+                else if (payload.TryGetProperty("type", out var eventTypeProp))
+                {
+                    var eventType = eventTypeProp.GetString();
+                    if (eventType is "user_message" or "agent_message")
+                    {
+                        var role = eventType == "agent_message" ? "assistant" : "user";
+                        var text = payload.TryGetProperty("message", out var messageProp) ? messageProp.GetString() ?? "" : "";
+                        AddMessage(messages, codeBlocks, role, text, timestamp, seen);
+                    }
                 }
             }
         }
+
+        if (string.IsNullOrWhiteSpace(created)) created = info.CreationTimeUtc.ToString("O");
+        if (string.IsNullOrWhiteSpace(updated)) updated = info.LastWriteTimeUtc.ToString("O");
 
         var title = CleanFallbackTitle(messages.FirstOrDefault(m => m.Role == "user" && IsTitleCandidate(m.Text))?.Text ?? Path.GetFileNameWithoutExtension(filePath));
         return new ArchiveSession
@@ -363,10 +395,18 @@ public sealed class ArchiveService
         };
     }
 
-    private static void AddMessage(ObservableCollection<ArchiveMessage> messages, ObservableCollection<CodeBlock> codeBlocks, string role, string text, string timestamp)
+    private static bool IsIndexedRole(string role)
+    {
+        return role.Equals("user", StringComparison.OrdinalIgnoreCase)
+            || role.Equals("assistant", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AddMessage(ObservableCollection<ArchiveMessage> messages, ObservableCollection<CodeBlock> codeBlocks, string role, string text, string timestamp, HashSet<string> seen)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
         var capped = text.Length > 4000 ? text[..4000] + "\n\n[Truncated in native index.]" : text;
+        var duplicateKey = $"{role}\n{timestamp}\n{capped}";
+        if (!seen.Add(duplicateKey)) return;
         var blocks = ExtractCodeBlocks(capped);
         foreach (var block in blocks) codeBlocks.Add(block);
         messages.Add(new ArchiveMessage
