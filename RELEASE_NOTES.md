@@ -1,3 +1,11 @@
+# v0.1.3
+
+Patch release for small icon proportions.
+
+## Fixes
+
+- Redrew the transparent folder mark with taller proportions so the titlebar and taskbar icon no longer read as a squished strip.
+
 # v0.1.2
 
 Patch release for the app icon.
