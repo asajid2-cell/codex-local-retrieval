@@ -1,3 +1,11 @@
+# v0.1.2
+
+Patch release for the app icon.
+
+## Fixes
+
+- Regenerated the app icon, titlebar icon, tile logos, and launcher icon with transparent backgrounds.
+
 # v0.1.1
 
 Patch release for local session indexing.
